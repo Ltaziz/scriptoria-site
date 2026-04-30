@@ -102,7 +102,8 @@ img {
 }
 
 .brand img {
-  width: 180px;
+  width: clamp(118px, 12vw, 180px);
+  max-height: 72px;
   height: auto;
 }
 
@@ -188,6 +189,7 @@ img {
 .hero-banner-image {
   width: 100%;
   height: auto;
+  display: block;
   object-fit: contain;
 }
 
@@ -811,7 +813,8 @@ section {
   }
 
   .nav {
-    min-height: 92px;
+    min-height: 78px;
+    gap: 12px;
   }
 
   .nav-toggle {
@@ -850,7 +853,8 @@ section {
   }
 
   .brand img {
-    width: 144px;
+    width: 118px;
+    max-height: 52px;
   }
 
 }
@@ -869,7 +873,9 @@ section {
   }
 
   .hero-banner {
-    border-radius: 18px;
+    width: min(100%, calc(100% - 16px));
+    border-radius: 14px;
+    margin-top: 4px;
   }
 
   .news-card {
@@ -918,6 +924,33 @@ section {
     width: 100%;
     justify-content: flex-end;
     padding: 24px 18px 24px;
+  }
+
+  .topbar {
+    font-size: 0.8rem;
+  }
+
+  .topbar-shell {
+    gap: 8px 14px;
+  }
+
+  .topbar-item {
+    gap: 6px;
+  }
+
+  .nav {
+    min-height: 68px;
+    width: min(100%, calc(100% - 16px));
+  }
+
+  .brand img {
+    width: 96px;
+    max-height: 42px;
+  }
+
+  .nav-toggle {
+    width: 42px;
+    height: 42px;
   }
 
   .hero-lead {
