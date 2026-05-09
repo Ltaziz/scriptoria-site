@@ -44,6 +44,7 @@ const form = document.getElementById("publisher-form");
 const titleInput = document.getElementById("news-title");
 const contentInput = document.getElementById("news-content");
 const imageInput = document.getElementById("news-image");
+const submitNewsButton = document.getElementById("submit-news");
 const selectedFileName = document.getElementById("selected-file-name");
 const previewShell = document.getElementById("publisher-preview");
 const previewImage = document.getElementById("preview-image");
@@ -507,6 +508,9 @@ const handlePreview = () => {
   previewObjectUrl = URL.createObjectURL(file);
   previewImage.src = previewObjectUrl;
   previewShell.hidden = false;
+  requestAnimationFrame(() => {
+    submitNewsButton?.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+  });
 };
 
 const trackVisitor = async () => {
@@ -689,6 +693,9 @@ const openPublishForm = () => {
   showStep("form");
   renderPosts();
   titleInput.focus();
+  requestAnimationFrame(() => {
+    titleInput.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+  });
 };
 
 const openDashboard = async () => {
