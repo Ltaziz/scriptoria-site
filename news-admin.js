@@ -53,6 +53,7 @@ const dashboardStatusBox = document.getElementById("dashboard-status");
 const dashboardPostCount = document.getElementById("dashboard-post-count");
 const dashboardVisitorCount = document.getElementById("dashboard-visitor-count");
 const postsSection = document.getElementById("posts-news");
+const publisherDialog = modal?.querySelector(".publisher-dialog");
 const newsSlider = document.querySelector("[data-news-slider]");
 const newsTrack = newsSlider?.querySelector(".news-track");
 const dotsContainer = newsSlider?.querySelector(".news-dots");
@@ -75,6 +76,21 @@ const feedState = {
 
 const normalizeDigits = (value) =>
   value.replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 1632));
+
+const centerElementInDialog = (element) => {
+  if (!element || !publisherDialog) return;
+
+  const dialogRect = publisherDialog.getBoundingClientRect();
+  const elementRect = element.getBoundingClientRect();
+  const currentScrollTop = publisherDialog.scrollTop;
+  const offsetTopInsideDialog = elementRect.top - dialogRect.top + currentScrollTop;
+  const targetScrollTop = offsetTopInsideDialog - publisherDialog.clientHeight / 2 + elementRect.height / 2;
+
+  publisherDialog.scrollTo({
+    top: Math.max(0, targetScrollTop),
+    behavior: "smooth",
+  });
+};
 
 const escapeHtml = (value) =>
   value.replace(/[&<>"']/g, (char) => {
@@ -230,14 +246,11 @@ const createNewsMarkup = (post, index) => {
   const readableDate = formatArabicDate(createdAt);
   const typeClass = getNewsTypeClass(Boolean(imageUrl));
   const typeLabel = getNewsTypeLabel(Boolean(imageUrl));
-  const categoryLabel = getNewsCategory(Boolean(imageUrl));
 
   return `
     <article class="news-item ${index === feedState.currentIndex ? "active" : ""}" data-post-id="${post.id}">
       <div class="news-meta">
         <span class="news-type ${typeClass}">${typeLabel}</span>
-        <span>${categoryLabel}</span>
-        <span>بواسطة المستخدم ${escapeHtml(post.author || "-")}</span>
         <time datetime="${isoDate}">${readableDate}</time>
       </div>
       <h3>${title}</h3>
@@ -509,7 +522,7 @@ const handlePreview = () => {
   previewImage.src = previewObjectUrl;
   previewShell.hidden = false;
   requestAnimationFrame(() => {
-    submitNewsButton?.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+    centerElementInDialog(submitNewsButton);
   });
 };
 
@@ -694,7 +707,7 @@ const openPublishForm = () => {
   renderPosts();
   titleInput.focus();
   requestAnimationFrame(() => {
-    titleInput.scrollIntoView({ behavior: "smooth", block: "start", inline: "nearest" });
+    centerElementInDialog(submitNewsButton);
   });
 };
 

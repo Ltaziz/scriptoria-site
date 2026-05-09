@@ -1363,7 +1363,7 @@ section {
     margin: 0 auto;
     max-height: calc(100vh - 8px);
     padding: 18px 12px;
-    padding-bottom: 28px;
+    padding-bottom: calc(108px + env(safe-area-inset-bottom, 0px));
     border-radius: 18px;
     scroll-padding-block: 12px 30vh;
   }
@@ -1449,10 +1449,10 @@ section {
 
   .publisher-step[data-step="form"] .publisher-actions-row {
     position: sticky;
-    bottom: -1px;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
     z-index: 4;
     padding-top: 10px;
-    padding-bottom: max(6px, env(safe-area-inset-bottom, 0px));
-    background: linear-gradient(180deg, rgba(246, 240, 232, 0), rgba(246, 240, 232, 0.96) 26%);
+    padding-bottom: 8px;
+    background: linear-gradient(180deg, rgba(246, 240, 232, 0), rgba(246, 240, 232, 0.98) 32%);
   }
 }
