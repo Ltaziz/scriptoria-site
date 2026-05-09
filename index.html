@@ -61,10 +61,22 @@
   </header>
 
   <main>
+    <section class="development-banner reveal" aria-label="تنبيه تطوير الموقع">
+      <div class="development-card">
+        <span>تنبيه مهم</span>
+        <h2>الموقع قيد التطوير</h2>
+        <p>نعمل الآن على استكمال التفاصيل وتحسين تجربة النشر والمتابعة. شكرًا لثقتكم وصبركم، ونعمل على تقديم تجربة أوضح وأفضل.</p>
+      </div>
+    </section>
+
     <section class="posts-news reveal" id="posts-news">
       <div class="section-title centered">
         <span>المنشورات والأخبار</span>
         <h2>آخر التحديثات والمنشورات</h2>
+      </div>
+
+      <div class="news-admin-toolbar">
+        <button class="btn btn-primary" type="button" id="open-publisher">تسجيل ونشر خبر</button>
       </div>
 
       <div class="news-card" data-news-slider>
@@ -72,64 +84,17 @@
         <button class="news-arrow news-arrow-left" type="button" aria-label="المنشور التالي">❮</button>
 
         <div class="news-track">
-          <article class="news-item active">
-            <div class="news-meta">
-              <span class="news-type type-text">خبر</span>
-              <span>بيان سياسي</span>
-              <time datetime="2026-04-30">30 نيسان 2026</time>
-            </div>
-            <h3>إطلاق مسار اتصالي جديد لمتابعة الخطاب العام</h3>
-            <p>
-              يتضمن هذا الخبر موجزًا عن توجهات الخطاب، أولويات الرسائل، وخطة النشر
-              خلال المرحلة المقبلة مع متابعة ردود الفعل العامة.
-            </p>
+          <article class="news-item news-item-state active">
             <div class="news-frame">
-              <strong>المحتوى</strong>
-              <p>صياغة الرسائل، ترتيب الأولويات، ومتابعة التفاعل مع القضايا اليومية.</p>
-            </div>
-          </article>
-
-          <article class="news-item">
-            <div class="news-meta">
-              <span class="news-type type-video">فيديو</span>
-              <span>تغطية إعلامية</span>
-              <time datetime="2026-04-28">28 نيسان 2026</time>
-            </div>
-            <h3>مقتطف فيديو من لقاء حول إدارة الرسائل الانتخابية</h3>
-            <p>
-              هذا المنشور مخصص لعرض فيديو قصير أو لقاء إعلامي مع عنوان واضح ووصف
-              مختصر يشرح مضمون المادة قبل فتحها أو تشغيلها.
-            </p>
-            <div class="news-frame">
-              <strong>المحتوى</strong>
-              <p>ملف فيديو، مدة النشر، وصف موجز، ورابط للمشاهدة الكاملة عند الحاجة.</p>
-            </div>
-          </article>
-
-          <article class="news-item">
-            <div class="news-meta">
-              <span class="news-type type-image">صورة</span>
-              <span>ألبوم فعالية</span>
-              <time datetime="2026-04-26">26 نيسان 2026</time>
-            </div>
-            <h3>صور من جلسة نقاش حول تموضع الحملات محليًا</h3>
-            <p>
-              يستخدم هذا النوع لعرض صورة واحدة أو مجموعة صور من فعالية، زيارة، أو
-              نشاط ميداني مع وصف مختصر يوضح السياق.
-            </p>
-            <div class="news-frame">
-              <strong>المحتوى</strong>
-              <p>صورة غلاف، عنوان، نص مرفق، وتفاصيل سريعة عن المناسبة أو الحدث.</p>
+              <strong>جار التحميل</strong>
+              <p>يتم جلب أحدث الأخبار من قاعدة البيانات...</p>
             </div>
           </article>
         </div>
 
-        <div class="news-dots" aria-label="مؤشرات المنشورات">
-          <button class="active" type="button" aria-label="المنشور 1"></button>
-          <button type="button" aria-label="المنشور 2"></button>
-          <button type="button" aria-label="المنشور 3"></button>
-        </div>
+        <div class="news-dots" aria-label="مؤشرات المنشورات"></div>
       </div>
+
     </section>
 
     <section class="intro reveal" id="about">
@@ -376,6 +341,117 @@
     <p>© 2026 Scriptoria IQ | التسويق السياسي والاستشارات السياسية</p>
   </footer>
 
+  <section class="publisher-modal" id="publisher-modal" aria-hidden="true">
+    <div class="publisher-backdrop" data-close-publisher></div>
+    <div class="publisher-dialog" role="dialog" aria-modal="true" aria-labelledby="publisher-title">
+      <button class="publisher-close" type="button" aria-label="إغلاق نافذة النشر" data-close-publisher>×</button>
+
+      <div class="publisher-step active" data-step="secret">
+        <p class="publisher-kicker">الخطوة 1</p>
+        <h3 id="publisher-title">اختر رقم المستخدم وأدخل الرمز</h3>
+        <p>أدخل بيانات الدخول للمتابعة.</p>
+        <label class="publisher-field">
+          <span>رقم المستخدم</span>
+          <select id="publisher-user-number" autocomplete="off">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </label>
+        <label class="publisher-field">
+          <span>الرمز السري</span>
+          <input id="secret-code" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="أدخل الرمز السري" />
+        </label>
+        <button class="btn btn-primary" type="button" id="check-secret">متابعة</button>
+      </div>
+
+      <div class="publisher-step" data-step="actions">
+        <p class="publisher-kicker">الخطوة 2</p>
+        <h3>اختر الإجراء</h3>
+        <p>يمكنك متابعة النشر أو الانتقال إلى شاشة حذف المنشورات.</p>
+        <div class="publisher-choice-grid">
+          <button class="publisher-choice-card" type="button" id="go-to-publish">
+            <strong>نشر خبر</strong>
+            <span>فتح نموذج إضافة منشور جديد</span>
+          </button>
+          <button class="publisher-choice-card" type="button" id="go-to-dashboard">
+            <strong>داشبورد</strong>
+            <span>عرض عدد المنشورات وعدد زوار الموقع</span>
+          </button>
+          <button class="publisher-choice-card danger" type="button" id="go-to-delete">
+            <strong>حذف منشور</strong>
+            <span>الرجوع إلى شاشة المنشورات وإظهار أزرار المسح</span>
+          </button>
+        </div>
+        <div class="publisher-actions-row">
+          <button class="btn btn-secondary" type="button" id="actions-back-to-secret">رجوع</button>
+        </div>
+      </div>
+
+      <form class="publisher-step" data-step="form" id="publisher-form">
+        <p class="publisher-kicker">الخطوة 3</p>
+        <h3>نشر خبر جديد</h3>
+        <p>أدخل العنوان والمحتوى ثم اختر صورة من الجهاز.</p>
+
+        <label class="publisher-field">
+          <span>العنوان</span>
+          <input id="news-title" name="title" type="text" maxlength="120" required placeholder="عنوان الخبر" />
+        </label>
+
+        <label class="publisher-field">
+          <span>المحتوى</span>
+          <textarea id="news-content" name="content" rows="6" maxlength="2000" required placeholder="اكتب محتوى الخبر هنا"></textarea>
+        </label>
+
+        <div class="publisher-field">
+          <span>الصورة</span>
+          <input id="news-image" name="image" type="file" accept="image/*" required hidden />
+          <label class="custom-file-input" for="news-image">
+            <span class="custom-file-button">اختار صورة</span>
+            <span class="custom-file-name" id="selected-file-name">لم يتم اختيار صورة</span>
+          </label>
+        </div>
+
+        <div class="publisher-preview" id="publisher-preview" hidden>
+          <img id="preview-image" alt="معاينة الصورة المختارة" />
+        </div>
+
+        <div class="publisher-status" id="publisher-status" aria-live="polite"></div>
+
+        <div class="publisher-actions-row">
+          <button class="btn btn-secondary" type="button" id="back-from-form">رجوع</button>
+          <button class="btn btn-primary" type="submit" id="submit-news">نشر الخبر</button>
+        </div>
+      </form>
+
+      <div class="publisher-step" data-step="dashboard">
+        <p class="publisher-kicker">الخطوة 3</p>
+        <h3>الداشبورد</h3>
+        <p>إحصاءات مباشرة من قاعدة البيانات للموقع والمنشورات.</p>
+
+        <div class="dashboard-grid">
+          <article class="dashboard-card">
+            <span>عدد المنشورات</span>
+            <strong id="dashboard-post-count">...</strong>
+          </article>
+          <article class="dashboard-card">
+            <span>عدد زوار الموقع</span>
+            <strong id="dashboard-visitor-count">...</strong>
+          </article>
+        </div>
+
+        <div class="publisher-status" id="dashboard-status" aria-live="polite"></div>
+
+        <div class="publisher-actions-row">
+          <button class="btn btn-secondary" type="button" id="back-from-dashboard">رجوع</button>
+          <button class="btn btn-primary" type="button" id="refresh-dashboard">تحديث الإحصاءات</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <script src="script.js"></script>
+  <script type="module" src="news-admin.js"></script>
 </body>
 </html>

@@ -52,13 +52,35 @@ navToggle?.addEventListener("click", () => {
 });
 
 const newsSlider = document.querySelector("[data-news-slider]");
+let newsSliderController = null;
 
-if (newsSlider) {
+const setupNewsSlider = () => {
+  if (!newsSlider) return;
+
   const items = [...newsSlider.querySelectorAll(".news-item")];
-  const dots = [...newsSlider.querySelectorAll(".news-dots button")];
+  const dotsContainer = newsSlider.querySelector(".news-dots");
   const prevButton = newsSlider.querySelector(".news-arrow-right");
   const nextButton = newsSlider.querySelector(".news-arrow-left");
-  let currentIndex = 0;
+
+  if (!items.length || !dotsContainer || !prevButton || !nextButton) return;
+
+  if (newsSliderController) {
+    newsSliderController.sync();
+    return;
+  }
+
+  dotsContainer.innerHTML = "";
+
+  items.forEach((_, index) => {
+    const dot = document.createElement("button");
+    dot.type = "button";
+    dot.setAttribute("aria-label", `المنشور ${index + 1}`);
+    dotsContainer.append(dot);
+  });
+
+  const dots = [...dotsContainer.querySelectorAll("button")];
+  let currentIndex = items.findIndex((item) => item.classList.contains("active"));
+  currentIndex = currentIndex >= 0 ? currentIndex : 0;
 
   const renderNews = (index) => {
     items.forEach((item, itemIndex) => {
@@ -70,22 +92,29 @@ if (newsSlider) {
     });
   };
 
-  prevButton?.addEventListener("click", () => {
+  prevButton.onclick = () => {
     currentIndex = (currentIndex - 1 + items.length) % items.length;
     renderNews(currentIndex);
-  });
+  };
 
-  nextButton?.addEventListener("click", () => {
+  nextButton.onclick = () => {
     currentIndex = (currentIndex + 1) % items.length;
     renderNews(currentIndex);
-  });
+  };
 
   dots.forEach((dot, dotIndex) => {
-    dot.addEventListener("click", () => {
+    dot.onclick = () => {
       currentIndex = dotIndex;
       renderNews(currentIndex);
-    });
+    };
   });
 
   renderNews(currentIndex);
-}
+};
+
+setupNewsSlider();
+window.refreshNewsSlider = setupNewsSlider;
+window.setNewsSliderController = (controller) => {
+  newsSliderController = controller;
+  newsSliderController?.sync?.();
+};
