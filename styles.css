@@ -130,6 +130,78 @@ img {
   color: var(--ink);
 }
 
+.nav-admin-menu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nav-admin-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 46px;
+  height: 46px;
+  padding: 0 12px;
+  border: 1px solid rgba(23, 50, 79, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 12px 30px rgba(23, 50, 79, 0.08);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.nav-admin-trigger:hover,
+.nav-admin-trigger:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 34px rgba(23, 50, 79, 0.12);
+  border-color: rgba(143, 41, 79, 0.26);
+}
+
+.nav-admin-trigger span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--navy);
+}
+
+.nav-admin-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 180px;
+  padding: 8px;
+  border: 1px solid rgba(23, 50, 79, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: var(--shadow);
+  z-index: 35;
+}
+
+.nav-admin-dropdown.is-open {
+  display: block;
+}
+
+.nav-admin-action {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(23, 50, 79, 0.08), rgba(143, 41, 79, 0.08));
+  color: var(--navy-strong);
+  font-family: "Cairo", sans-serif;
+  font-size: 0.98rem;
+  font-weight: 800;
+  text-align: right;
+  cursor: pointer;
+}
+
+.nav-admin-action:hover,
+.nav-admin-action:focus-visible {
+  background: linear-gradient(135deg, rgba(23, 50, 79, 0.12), rgba(143, 41, 79, 0.12));
+}
+
 .nav-link::after {
   content: "";
   position: absolute;
@@ -500,6 +572,20 @@ img {
   color: #fff;
   background: linear-gradient(135deg, var(--wine), var(--navy));
   box-shadow: 0 18px 32px rgba(111, 30, 61, 0.22);
+}
+
+.google-login-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.google-login-button img {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  object-fit: contain;
 }
 
 .btn-secondary {
@@ -963,6 +1049,21 @@ section {
   flex-wrap: wrap;
 }
 
+.publisher-actions-row .btn-secondary {
+  color: var(--navy-strong);
+  background: rgba(23, 50, 79, 0.08);
+  border: 1px solid rgba(23, 50, 79, 0.16);
+  box-shadow: 0 10px 24px rgba(23, 50, 79, 0.08);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.publisher-actions-row .btn-secondary:hover,
+.publisher-actions-row .btn-secondary:focus-visible {
+  background: rgba(23, 50, 79, 0.14);
+  border-color: rgba(143, 41, 79, 0.22);
+}
+
 .publisher-choice-grid {
   display: grid;
   gap: 14px;
@@ -1228,6 +1329,27 @@ section {
     justify-content: space-between;
     padding: 16px 10px;
     border-bottom: 1px solid rgba(23, 50, 79, 0.08);
+  }
+
+  .nav-admin-menu {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 14px 10px;
+    border-bottom: 1px solid rgba(23, 50, 79, 0.08);
+  }
+
+  .nav-admin-trigger {
+    width: 52px;
+    align-self: flex-end;
+  }
+
+  .nav-admin-dropdown {
+    position: static;
+    width: 100%;
+    min-width: 0;
+    margin-top: 12px;
   }
 
   .nav-link:last-child {

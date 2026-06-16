@@ -1,4 +1,10 @@
-import { db, storage } from "./firebase-config.js";
+import { auth, db, storage } from "./firebase-config.js";
+import {
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signInWithPopup,
+  signOut,
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   addDoc,
   collection,
@@ -21,25 +27,19 @@ import {
   uploadBytesResumable,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
-const USER_CODES = {
-  "1": "1111111",
-  "2": "2222222",
-  "3": "3333333",
-  "4": "4444444",
-};
 const PAGE_SIZE = 5;
 const MAX_VISIBLE_DOTS = 7;
 const UPLOAD_TIMEOUT_MS = 30000;
 const VISITOR_SESSION_KEY = "scriptoria-visitor-counted";
 const postsCollection = collection(db, "newsPosts");
 const metricsDocRef = doc(db, "siteMetrics", "publicStats");
+const adminUsersCollection = collection(db, "adminUsers");
 
 const modal = document.getElementById("publisher-modal");
-const openButton = document.getElementById("open-publisher");
+const openButton = document.getElementById("admin-menu-trigger");
 const closeButtons = document.querySelectorAll("[data-close-publisher]");
 const stepElements = [...document.querySelectorAll(".publisher-step")];
-const userNumberInput = document.getElementById("publisher-user-number");
-const secretInput = document.getElementById("secret-code");
+const googleLoginButton = document.getElementById("google-login-button");
 const form = document.getElementById("publisher-form");
 const titleInput = document.getElementById("news-title");
 const contentInput = document.getElementById("news-content");
@@ -49,6 +49,7 @@ const selectedFileName = document.getElementById("selected-file-name");
 const previewShell = document.getElementById("publisher-preview");
 const previewImage = document.getElementById("preview-image");
 const statusBox = document.getElementById("publisher-status");
+const linkStatusBox = document.getElementById("publisher-link-status");
 const dashboardStatusBox = document.getElementById("dashboard-status");
 const dashboardPostCount = document.getElementById("dashboard-post-count");
 const dashboardVisitorCount = document.getElementById("dashboard-visitor-count");
@@ -59,12 +60,13 @@ const newsTrack = newsSlider?.querySelector(".news-track");
 const dotsContainer = newsSlider?.querySelector(".news-dots");
 const prevButton = newsSlider?.querySelector(".news-arrow-right");
 const nextButton = newsSlider?.querySelector(".news-arrow-left");
+const signOutButton = document.getElementById("actions-sign-out");
 
-let publisherUserNumber = "";
 let isAdminUser = false;
 let deleteModeActive = false;
 let previewObjectUrl = null;
 let activeDeleteButton = null;
+let currentAdminUser = null;
 
 const feedState = {
   posts: [],
@@ -73,9 +75,6 @@ const feedState = {
   hasMore: true,
   isLoading: false,
 };
-
-const normalizeDigits = (value) =>
-  value.replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 1632));
 
 const centerElementInDialog = (element) => {
   if (!element || !publisherDialog) return;
@@ -136,8 +135,47 @@ const withTimeout = (promise, timeoutMs, timeoutMessage) =>
       });
   });
 
+const getCurrentRuntimeDetails = () => {
+  const host = window.location.hostname || "unknown-host";
+  const origin = window.location.origin || window.location.href;
+
+  return {
+    host,
+    origin,
+  };
+};
+
 const formatFirebaseError = (error) => {
   const code = error?.code || "";
+  const { host, origin } = getCurrentRuntimeDetails();
+
+  if (code.includes("auth/operation-not-allowed")) {
+    return "طريقة تسجيل الدخول الحالية غير مفعّلة في Firebase. تحقق من تفعيل المزود المختار داخل Firebase Authentication.";
+  }
+
+  if (code.includes("auth/popup-blocked")) {
+    return "تم حظر نافذة تسجيل الدخول المنبثقة من المتصفح. اسمح بالنوافذ المنبثقة ثم أعد المحاولة.";
+  }
+
+  if (code.includes("auth/popup-closed-by-user")) {
+    return "تم إغلاق نافذة تسجيل الدخول قبل إكمال العملية.";
+  }
+
+  if (code.includes("auth/cancelled-popup-request")) {
+    return "تم إلغاء طلب تسجيل الدخول المنبثق. أعد المحاولة.";
+  }
+
+  if (code.includes("auth/quota-exceeded")) {
+    return "تم تجاوز الحد اليومي لطريقة تسجيل الدخول هذه في Firebase. جرّب لاحقًا أو استخدم مزودًا آخر.";
+  }
+
+  if (code.includes("auth/invalid-credential") || code.includes("auth/wrong-password") || code.includes("auth/user-not-found")) {
+    return "بيانات تسجيل الدخول غير صحيحة.";
+  }
+
+  if (code.includes("auth/too-many-requests")) {
+    return "تمت محاولات كثيرة. انتظر قليلًا ثم أعد المحاولة.";
+  }
 
   if (code.includes("storage/unauthorized") || code.includes("permission-denied")) {
     return "الرفع مرفوض من صلاحيات Firebase. يجب تعديل قواعد Storage وFirestore.";
@@ -167,6 +205,12 @@ const setStatus = (message, mode = "info") => {
   statusBox.dataset.state = mode;
 };
 
+const setLinkStatus = (message, mode = "info") => {
+  if (!linkStatusBox) return;
+  linkStatusBox.textContent = message;
+  linkStatusBox.dataset.state = mode;
+};
+
 const setDashboardStatus = (message, mode = "info") => {
   if (!dashboardStatusBox) return;
   dashboardStatusBox.textContent = message;
@@ -182,9 +226,13 @@ const showStep = (stepName) => {
 const openModal = () => {
   modal.classList.add("is-open");
   modal.setAttribute("aria-hidden", "false");
-  showStep("secret");
   setStatus("");
-  userNumberInput?.focus();
+  showStep(currentAdminUser ? "actions" : "secret");
+  if (currentAdminUser) {
+    document.getElementById("go-to-publish")?.focus();
+  } else {
+    googleLoginButton?.focus();
+  }
   document.body.classList.add("modal-open");
 };
 
@@ -205,17 +253,13 @@ const clearPreview = () => {
 };
 
 const resetPublisher = () => {
-  publisherUserNumber = "";
-  isAdminUser = false;
   deleteModeActive = false;
   form.reset();
-  if (userNumberInput) userNumberInput.value = "1";
-  secretInput.value = "";
-  secretInput.placeholder = "أدخل الرمز السري";
   if (selectedFileName) selectedFileName.textContent = "لم يتم اختيار صورة";
   clearPreview();
   setStatus("");
-  showStep("secret");
+  setLinkStatus("");
+  showStep(currentAdminUser ? "actions" : "secret");
   renderPosts();
 };
 
@@ -479,33 +523,77 @@ const showNextPost = async () => {
   renderPosts();
 };
 
-const handleSecretCheck = () => {
-  const selectedUser = normalizeDigits(userNumberInput?.value?.trim() || "");
-  const normalized = normalizeDigits(secretInput.value.trim());
+const updateAdminTriggerLabel = () => {
+  if (!openButton) return;
+  openButton.setAttribute("aria-label", currentAdminUser ? "لوحة الأدمن" : "دخول الأدمن");
+};
 
-  if (!USER_CODES[selectedUser]) {
-    setStatus("اختر رقم مستخدم صالح قبل المتابعة.", "error");
-    userNumberInput?.focus();
-    return;
+const getAdminUserDocRef = (uid) => doc(adminUsersCollection, uid);
+
+const syncAdminUserRecord = async (user) => {
+  const userDocRef = getAdminUserDocRef(user.uid);
+  const userSnapshot = await getDoc(userDocRef);
+
+  if (!userSnapshot.exists()) {
+    await setDoc(userDocRef, {
+      uid: user.uid,
+      email: user.email || "",
+      displayName: user.displayName || "",
+      isAdmin: false,
+      providers: user.providerData.map((provider) => provider.providerId).filter(Boolean),
+      createdAt: serverTimestamp(),
+      lastLoginAt: serverTimestamp(),
+    });
+
+    return {
+      isAdmin: false,
+      isNew: true,
+    };
   }
 
-  if (normalized !== USER_CODES[selectedUser]) {
-    setStatus("الرمز السري غير صحيح لهذا المستخدم.", "error");
-    secretInput.focus();
-    return;
-  }
+  const data = userSnapshot.data() || {};
 
-  publisherUserNumber = selectedUser;
-  isAdminUser = selectedUser === "1";
+  await setDoc(
+    userDocRef,
+    {
+      uid: user.uid,
+      email: user.email || data.email || "",
+      displayName: user.displayName || data.displayName || "",
+      providers: user.providerData.map((provider) => provider.providerId).filter(Boolean),
+      lastLoginAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  return {
+    isAdmin: data.isAdmin === true,
+    isNew: false,
+  };
+};
+
+const completeProviderLogin = (user) => {
+  currentAdminUser = user;
+  isAdminUser = Boolean(user);
   deleteModeActive = false;
+  setLinkStatus("");
   setStatus("");
-  if (isAdminUser) {
-    showStep("actions");
-  } else {
-    showStep("form");
-    titleInput.focus();
+  showStep("actions");
+  updateAdminTriggerLabel();
+};
+
+const handleGoogleSignIn = async () => {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  setLinkStatus("جارٍ فتح نافذة تسجيل الدخول عبر Google...", "loading");
+
+  try {
+    const result = await signInWithPopup(auth, provider);
+    await syncAdminUserRecord(result.user);
+    completeProviderLogin(result.user);
+  } catch (error) {
+    console.error("Failed to sign in with Google.", error);
+    setLinkStatus(formatFirebaseError(error), "error");
   }
-  renderPosts();
 };
 
 const handlePreview = () => {
@@ -611,8 +699,8 @@ const prependPublishedPost = (post) => {
 const handleSubmit = async (event) => {
   event.preventDefault();
 
-  if (!publisherUserNumber) {
-    setStatus("أعد التحقق من رقم المستخدم أولًا.", "error");
+  if (!currentAdminUser) {
+    setStatus("سجّل دخول الأدمن أولًا.", "error");
     showStep("secret");
     return;
   }
@@ -642,7 +730,7 @@ const handleSubmit = async (event) => {
       addDoc(postsCollection, {
         title,
         content,
-        author: publisherUserNumber,
+        author: currentAdminUser.email || "admin",
         imageUrl,
         createdAt: serverTimestamp(),
       }),
@@ -654,7 +742,7 @@ const handleSubmit = async (event) => {
       id: docRef.id,
       title,
       content,
-      author: publisherUserNumber,
+      author: currentAdminUser.email || "admin",
       imageUrl,
       createdAt: new Date(),
     });
@@ -728,6 +816,23 @@ const activateDeleteMode = () => {
   postsSection?.scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
+const handleSignOut = async () => {
+  try {
+    await signOut(auth);
+    currentAdminUser = null;
+    isAdminUser = false;
+    deleteModeActive = false;
+    resetPublisher();
+    setStatus("تم تسجيل الخروج.", "success");
+    updateAdminTriggerLabel();
+    showStep("secret");
+    googleLoginButton?.focus();
+  } catch (error) {
+    console.error("Failed to sign out admin user.", error);
+    setStatus("تعذر تسجيل الخروج حاليًا.", "error");
+  }
+};
+
 window.setNewsSliderController?.({
   sync: () => {
     prevButton.onclick = showPreviousPost;
@@ -737,6 +842,7 @@ window.setNewsSliderController?.({
 });
 
 openButton?.addEventListener("click", openModal);
+googleLoginButton?.addEventListener("click", handleGoogleSignIn);
 
 closeButtons.forEach((button) => {
   button.addEventListener("click", () => {
@@ -745,22 +851,22 @@ closeButtons.forEach((button) => {
   });
 });
 
-document.getElementById("check-secret")?.addEventListener("click", handleSecretCheck);
 document.getElementById("actions-back-to-secret")?.addEventListener("click", () => {
   setStatus("");
-  showStep("secret");
-  userNumberInput?.focus();
+  showStep(currentAdminUser ? "actions" : "secret");
+  if (!currentAdminUser) googleLoginButton?.focus();
 });
 document.getElementById("go-to-publish")?.addEventListener("click", openPublishForm);
 document.getElementById("go-to-dashboard")?.addEventListener("click", openDashboard);
 document.getElementById("go-to-delete")?.addEventListener("click", activateDeleteMode);
+signOutButton?.addEventListener("click", handleSignOut);
 document.getElementById("back-from-form")?.addEventListener("click", () => {
   setStatus("");
-  if (isAdminUser) {
+  if (currentAdminUser) {
     showStep("actions");
   } else {
     showStep("secret");
-    userNumberInput?.focus();
+    googleLoginButton?.focus();
   }
 });
 document.getElementById("back-from-dashboard")?.addEventListener("click", () => {
@@ -782,6 +888,26 @@ document.addEventListener("keydown", (event) => {
     closeModal();
     resetPublisher();
   }
+});
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    currentAdminUser = null;
+    isAdminUser = false;
+    deleteModeActive = false;
+    updateAdminTriggerLabel();
+
+    if (modal?.classList.contains("is-open")) {
+      showStep("secret");
+    }
+    return;
+  }
+
+  await syncAdminUserRecord(user);
+  currentAdminUser = user;
+  isAdminUser = true;
+  deleteModeActive = false;
+  updateAdminTriggerLabel();
 });
 
 await trackVisitor();
