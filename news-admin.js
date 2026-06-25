@@ -69,14 +69,9 @@ let previewObjectUrl = null;
 let activeDeleteButton = null;
 let currentAdminUser = null;
 
-const hasAdminAccessHint = () => {
-  const searchParams = new URLSearchParams(window.location.search);
-  return searchParams.get("admin") === "1" || window.location.hash === "#admin";
-};
-
 const updateAdminEntryVisibility = () => {
   if (!adminMenu) return;
-  adminMenu.hidden = !(isAdminUser || hasAdminAccessHint());
+  adminMenu.hidden = !isAdminUser;
 };
 
 const feedState = {
