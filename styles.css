@@ -136,6 +136,11 @@ img {
   align-items: center;
 }
 
+.nav-admin-menu[hidden],
+.nav-admin-dropdown[hidden] {
+  display: none !important;
+}
+
 .nav-admin-trigger {
   display: inline-flex;
   align-items: center;
