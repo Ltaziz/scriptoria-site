@@ -36,6 +36,7 @@ const metricsDocRef = doc(db, "siteMetrics", "publicStats");
 const adminUsersCollection = collection(db, "adminUsers");
 
 const modal = document.getElementById("publisher-modal");
+const adminMenu = document.getElementById("nav-admin-menu");
 const openButton = document.getElementById("admin-menu-trigger");
 const closeButtons = document.querySelectorAll("[data-close-publisher]");
 const stepElements = [...document.querySelectorAll(".publisher-step")];
@@ -67,6 +68,16 @@ let deleteModeActive = false;
 let previewObjectUrl = null;
 let activeDeleteButton = null;
 let currentAdminUser = null;
+
+const hasAdminAccessHint = () => {
+  const searchParams = new URLSearchParams(window.location.search);
+  return searchParams.get("admin") === "1" || window.location.hash === "#admin";
+};
+
+const updateAdminEntryVisibility = () => {
+  if (!adminMenu) return;
+  adminMenu.hidden = !(isAdminUser || hasAdminAccessHint());
+};
 
 const feedState = {
   posts: [],
@@ -163,6 +174,10 @@ const formatFirebaseError = (error) => {
 
   if (code.includes("auth/cancelled-popup-request")) {
     return "تم إلغاء طلب تسجيل الدخول المنبثق. أعد المحاولة.";
+  }
+
+  if (code.includes("auth/unauthorized-domain")) {
+    return `الدومين الحالي غير مخوّل داخل Firebase Authentication. أضف هذا الدومين إلى Authorized domains ثم أعد المحاولة: ${host} (${origin})`;
   }
 
   if (code.includes("auth/quota-exceeded")) {
@@ -578,6 +593,7 @@ const completeProviderLogin = (user) => {
   setLinkStatus("");
   setStatus("");
   showStep("actions");
+  updateAdminEntryVisibility();
   updateAdminTriggerLabel();
 };
 
@@ -588,7 +604,19 @@ const handleGoogleSignIn = async () => {
 
   try {
     const result = await signInWithPopup(auth, provider);
-    await syncAdminUserRecord(result.user);
+    const adminRecord = await syncAdminUserRecord(result.user);
+
+    if (!adminRecord.isAdmin) {
+      await signOut(auth);
+      currentAdminUser = null;
+      isAdminUser = false;
+      updateAdminEntryVisibility();
+      updateAdminTriggerLabel();
+      setLinkStatus("هذا الحساب غير مخوّل كأدمن. فعّل حقل isAdmin لهذا المستخدم داخل Firestore أولًا.", "error");
+      showStep("secret");
+      return;
+    }
+
     completeProviderLogin(result.user);
   } catch (error) {
     console.error("Failed to sign in with Google.", error);
@@ -824,6 +852,7 @@ const handleSignOut = async () => {
     deleteModeActive = false;
     resetPublisher();
     setStatus("تم تسجيل الخروج.", "success");
+    updateAdminEntryVisibility();
     updateAdminTriggerLabel();
     showStep("secret");
     googleLoginButton?.focus();
@@ -895,6 +924,7 @@ onAuthStateChanged(auth, async (user) => {
     currentAdminUser = null;
     isAdminUser = false;
     deleteModeActive = false;
+    updateAdminEntryVisibility();
     updateAdminTriggerLabel();
 
     if (modal?.classList.contains("is-open")) {
@@ -903,12 +933,29 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  await syncAdminUserRecord(user);
+  const adminRecord = await syncAdminUserRecord(user);
+
+  if (!adminRecord.isAdmin) {
+    currentAdminUser = null;
+    isAdminUser = false;
+    deleteModeActive = false;
+    updateAdminEntryVisibility();
+    updateAdminTriggerLabel();
+
+    if (modal?.classList.contains("is-open")) {
+      setLinkStatus("هذا الحساب مسجل دخول لكنه ليس أدمن.", "error");
+      showStep("secret");
+    }
+    return;
+  }
+
   currentAdminUser = user;
   isAdminUser = true;
   deleteModeActive = false;
+  updateAdminEntryVisibility();
   updateAdminTriggerLabel();
 });
 
+updateAdminEntryVisibility();
 await trackVisitor();
 await fetchPostsBatch({ reset: true });
